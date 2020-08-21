@@ -11,6 +11,7 @@ class CPU:
         self.pc = 0
         self.register = [0] * 8
         self.running = True
+        self.fl = 0
 
     def ram_read(self, MAR):
         return self.ram[MAR]
@@ -79,7 +80,7 @@ class CPU:
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
             self.pc,
-            #self.fl,
+            # self.fl,
             #self.ie,
             self.ram_read(self.pc),
             self.ram_read(self.pc + 1),
@@ -87,7 +88,7 @@ class CPU:
         ), end='')
 
         for i in range(8):
-            print(" %02X" % self.reg[i], end='')
+            print(" %02X" % self.register[i], end='')
 
         print()
 
@@ -103,6 +104,10 @@ class CPU:
         RET = 0b00010001
         SP = 7
         ADD = 0b10100000
+        CMP = 0b10100111
+        JMP = 0b01010100
+        JEQ = 0b01010101
+        JNE = 0b01010110
 
         while self.running:
             IR = self.ram_read(self.pc)
@@ -157,6 +162,32 @@ class CPU:
                 sp = self.register[SP]
                 self.pc = self.ram[sp]
                 self.register[SP] += 1
+
+            elif IR == CMP:
+                valuea = self.register[operandA]
+                valueb = self.register[operandB]
+                if valuea == valueb:
+                    self.fl = 1
+                elif valuea > valueb:
+                    self.fl =  2
+                elif valuea < valueb:
+                    self.fl = 4
+                self.pc += 3
+
+            elif IR == JNE:
+                if self.fl == 1:
+                    self.pc += 2
+                elif self.fl != 1:
+                    self.pc = self.register[operandA]
+            
+            elif IR == JMP:
+                self.pc = self.register[operandA]
+            
+            elif IR == JEQ:
+                if self.fl != 1:
+                    self.pc += 2
+                elif self.fl == 1:
+                    self.pc = self.register[operandA]
 
             else:
                 self.running = False
